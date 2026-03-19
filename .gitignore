@@ -1,0 +1,17 @@
+# React
+node_modules/
+build/
+.env
+
+# Java / Spring Boot
+target/
+*.class
+.gradle/
+.settings/
+
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
