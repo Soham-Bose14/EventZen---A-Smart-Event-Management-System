@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace customer.Models
 {
-    [Table("event_details")] // Explicitly naming the table as per your requirement
+    [Table("event_details")] 
     public class EventDetails
     {
         [Key]
@@ -15,29 +15,32 @@ namespace customer.Models
 
         public string Description { get; set; } = string.Empty;
 
-        public string EventType { get; set; } = string.Empty; // e.g. Music, Tech, Workshop
+        public string EventType { get; set; } = string.Empty; 
 
         [Required]
         public DateTime DateTime { get; set; }
 
-        [Column(TypeName = "decimal(18, 2)")] // Ensures MySQL handles the currency correctly
+        [Column(TypeName = "decimal(18, 2)")] 
         public decimal Price { get; set; }
 
         public string ImagePath { get; set; } = string.Empty; 
 
+        // Current tickets left for booking
         public int AvailableTickets { get; set; }
+
+        // --- NEW PROPERTY ---
+        // The total capacity/initial tickets of the event
+        [Column("TotalTickets")]
+        public int TotalTickets { get; set; }
 
         // --- Relationships ---
 
-        // Foreign Key to the Organizer (The Customer)
         [Required]
         public int OrganizerId { get; set; }
 
         [ForeignKey("OrganizerId")]
         public virtual Organizer Organizer { get; set; } = null!;
 
-        // Relationship to Venue (1-to-1)
-        // Note: The Foreign Key is actually defined in the VenueDetails table
         public virtual VenueDetails Venue { get; set; } = null!;
     }
 }

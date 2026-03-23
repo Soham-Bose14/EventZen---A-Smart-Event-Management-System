@@ -26,12 +26,11 @@ const Startup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // if (accountType === 'Admin') {
-        //     toast.warn("Admin logic is under maintenance!");
-        //     return;
-        // }
-        // Just for now
         if(accountType == 'Admin'){
+            if(password !== "Admin@123" || email !== "admin@gmail.com"){
+                toast.error("Invalid Credentials!", { theme: "dark" });
+                return;
+            }
             navigate("/admin/user-list")
             return;
         }
@@ -52,7 +51,6 @@ const Startup = () => {
                 : "http://localhost:5062/api/Customer/register";
         }
 
-        // Construct Payload with converted types and matching keys
         const payload = {
             email,
             password,
@@ -93,7 +91,7 @@ const Startup = () => {
                     navigate("/admin/user-list")
                 }
                 else{
-                    navigate("/customer/create-event")
+                    navigate("/customer/my-hosted-events")
                 }
             } else {
                 const errorMsg = await response.text();
@@ -101,15 +99,32 @@ const Startup = () => {
             }
         } catch (error) {
             console.error("Connection Error:", error);
-            toast.error("Server is offline. Check backends on 8080/5062.", { theme: "colored" });
+            toast.error("Invalid Credentials! Try again.", { theme: "colored" });
         }
     };
 
     return (
         <div className="App-header">
             <ToastContainer />
-            <div className="auth-container fade-in">
-                <h1>EventZen</h1>
+            
+            {/* Catchy Hero Section */}
+            <div className="hero-section fade-in" style={{ textAlign: 'center', marginBottom: '40px' }}>
+                <h1 style={{ fontSize: '3.5rem', margin: '0', background: 'linear-gradient(45deg, #61dafb, #d4a5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>
+                    EventZen
+                </h1>
+                <h2 style={{ fontSize: '1.5rem', color: '#cbd5e1', marginTop: '10px', fontWeight: '400' }}>
+                    Where Experiences Meet Excellence.
+                </h2>
+                <p style={{ color: '#94a3b8', maxWidth: '500px', margin: '15px auto', lineHeight: '1.6' }}>
+                    Join thousands of users discovering the best events, or become a host and share your passion with the world.
+                </p>
+                <div style={{ width: '60px', height: '4px', background: '#61dafb', margin: '20px auto', borderRadius: '2px' }}></div>
+            </div>
+
+            <div className="auth-container fade-in" style={{ marginTop: '0' }}>
+                <h2 style={{ marginBottom: '25px', fontSize: '1.8rem', fontWeight: '700' }}>
+                    {activeAction === 'Login' ? 'Welcome Back!' : 'Get Started'}
+                </h2>
 
                 <div className="tab-group">
                     {actions.map((action) => (
@@ -209,12 +224,14 @@ const Startup = () => {
                         </div>
                     )}
 
-                    <button type="submit" className="submit-btn">
-                        {activeAction} as {accountType}
+                    <button type="submit" className="submit-btn" style={{ fontSize: '1.1rem', padding: '15px' }}>
+                        {activeAction === 'Login' ? `Login as ${accountType}` : `Create ${accountType} Account`}
                     </button>
                 </form>
             </div>
-            <p style={{ marginTop: '20px', fontSize: '0.8rem', color: '#64748b' }}>© 2026 EventZen Management System</p>
+            <p style={{ marginTop: '30px', fontSize: '0.85rem', color: '#64748b', letterSpacing: '1px' }}>
+                POWERED BY EVENTZEN • EST. 2026
+            </p>
         </div>
     );
 };

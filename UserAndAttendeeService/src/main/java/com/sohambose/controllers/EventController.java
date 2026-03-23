@@ -113,16 +113,51 @@ public class EventController {
      * Fetches registration records and maps them back to EventDetails objects.
      */
     @GetMapping("/applied/{userId}")
-    public ResponseEntity<List<EventDetails>> getAppliedEvents(@PathVariable Integer userId) {
+    public ResponseEntity<List<Registration>> getAppliedEvents(@PathVariable Integer userId) {
         User user = userRepo.findById(userId).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
 
+        // Fetch the full registration objects from the database
         List<Registration> registrations = registrationRepo.findByUser(user);
         
-        List<EventDetails> appliedEvents = registrations.stream()
-                .map(Registration::getEvent)
-                .collect(Collectors.toList());
+        // Return them directly so React gets { id, event, quantity, user }
+        return ResponseEntity.ok(registrations);
+    }
 
-        return ResponseEntity.ok(appliedEvents);
+    /**
+     * Cancel a registration for an event.
+     * Deletes the registration record and adds the tickets back to Event availability.
+     * URL: DELETE http://localhost:8080/events/registration/{regId}
+     */
+    @DeleteMapping("/registration/{regId}")
+    public ResponseEntity<String> cancelRegistration(@PathVariable Integer regId) {
+        // 1. Find the registration
+        Registration registration = registrationRepo.findById(regId).orElse(null);
+
+        if (registration == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            // 2. Get the associated event and the quantity to be returned
+            EventDetails event = registration.getEvent();
+            int ticketsToReturn = registration.getQuantity();
+
+            // 3. Delete the registration record
+            registrationRepo.delete(registration);
+
+            // 4. Update the Event Ticket Count (Add tickets back)
+            if (event != null) {
+                int updatedTickets = event.getAvailableTickets() + ticketsToReturn;
+                event.setAvailableTickets(updatedTickets);
+                
+                // Save the updated event details back to MySQL
+                eventRepo.save(event);
+            }
+
+            return ResponseEntity.ok("Registration cancelled successfully. " + ticketsToReturn + " tickets returned to inventory.");
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body("Cancellation failed: " + ex.getMessage());
+        }
     }
 }

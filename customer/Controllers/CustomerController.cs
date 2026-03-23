@@ -26,6 +26,9 @@ namespace customer.Controllers
         public string ImagePath { get; set; } = string.Empty;
         public int AvailableTickets { get; set; }
         
+        // Added to capture the total capacity upon creation
+        public int TotalTickets { get; set; } 
+        
         // Venue specific fields
         public string City { get; set; } = string.Empty;
         public string VenueName { get; set; } = string.Empty;
@@ -43,7 +46,7 @@ namespace customer.Controllers
             _context = context;
         }
 
-        // 1. REGISTER CUSTOMER
+        // 1. REGISTER CUSTOMER (ORGANIZER)
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] Organizer customer)
         {
@@ -73,12 +76,11 @@ namespace customer.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.InnerException?.Message ?? ex.Message);
                 return BadRequest(new { message = "Registration failed", error = ex.Message });
             }
         }
 
-        // 2. LOGIN CUSTOMER
+        // 2. LOGIN CUSTOMER (ORGANIZER)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -112,6 +114,8 @@ namespace customer.Controllers
                         Price = dto.Price,
                         ImagePath = dto.ImagePath,
                         AvailableTickets = dto.AvailableTickets,
+                        // NEW Logic: Ensure TotalTickets matches AvailableTickets at launch if not specified
+                        TotalTickets = dto.TotalTickets > 0 ? dto.TotalTickets : dto.AvailableTickets,
                         OrganizerId = organizerId
                     };
 
@@ -139,38 +143,49 @@ namespace customer.Controllers
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    finalResult = BadRequest(new { 
-                        message = "Failed to create event", 
-                        error = ex.Message 
-                    });
+                    finalResult = BadRequest(new { message = "Failed to create event", error = ex.Message });
                 }
             });
 
             return finalResult;
         }
 
-        // 4. GET EVENTS BY CUSTOMER ID (Fixed Include)
+        // 4. GET EVENTS BY CUSTOMER ID (Includes Real-Time Analytics)
         [HttpGet("{organizerId}/events")]
         public async Task<IActionResult> GetEventsByCustomerId(int organizerId)
         {
             try
             {
-                // Corrected: Using .Include(e => e.Venue) to match EventDetails.cs
                 var events = await _context.EventDetails
                     .Where(e => e.OrganizerId == organizerId)
                     .Include(e => e.Venue) 
                     .OrderByDescending(e => e.DateTime)
+                    .Select(e => new {
+                        e.Id,
+                        e.Title,
+                        e.Description,
+                        e.EventType,
+                        e.DateTime,
+                        e.Price,
+                        e.ImagePath,
+                        e.AvailableTickets,
+                        e.TotalTickets,
+                        // Calculation Logic for Vendor Dashboard
+                        TicketsSold = e.TotalTickets - e.AvailableTickets,
+                        Revenue = (e.TotalTickets - e.AvailableTickets) * e.Price,
+                        Venue = e.Venue != null ? new {
+                            e.Venue.Venue,
+                            e.Venue.City,
+                            e.Venue.Address
+                        } : null
+                    })
                     .ToListAsync();
 
-                return Ok(events ?? new List<EventDetails>());
+                return Ok(events);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                return BadRequest(new { 
-                    message = "Failed to retrieve events for this organizer", 
-                    error = ex.Message 
-                });
+                return BadRequest(new { message = "Failed to retrieve events", error = ex.Message });
             }
         }
 
@@ -180,8 +195,6 @@ namespace customer.Controllers
         {
             try
             {
-                // Fetch all organizers from the database
-                // We select only non-sensitive data to return
                 var customers = await _context.Organizers
                     .Select(o => new {
                         o.Id,
@@ -195,11 +208,7 @@ namespace customer.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                return BadRequest(new { 
-                    message = "Failed to retrieve customers", 
-                    error = ex.Message 
-                });
+                return BadRequest(new { message = "Failed to retrieve customers", error = ex.Message });
             }
         }
     }

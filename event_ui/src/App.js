@@ -26,10 +26,7 @@ function App() {
             {/* Existing Routes */}
             <Route path="/" element={<Startup />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/applied-events" element={<AppliedEvents />} />
-
-            {/* New Customer/Organizer Routes */}
-            
+            <Route path="/applied-events" element={<AppliedEvents />} />            
             <Route path="/customer/create-event" element={<CreateEvent />} />
             <Route path="/customer/my-hosted-events" element={<MyHostedEvents />} />
             <Route path="/admin/user-list" element={<UserList />} />

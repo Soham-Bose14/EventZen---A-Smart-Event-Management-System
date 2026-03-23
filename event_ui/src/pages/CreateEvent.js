@@ -27,6 +27,7 @@ const CreateEvent = () => {
         price: 0,
         imagePath: '',
         availableTickets: 0,
+        totalTickets: 0, // NEW: Added to state
         city: '',
         venueName: '',
         address: ''
@@ -40,7 +41,7 @@ const CreateEvent = () => {
             const response = await fetch(`http://localhost:5062/api/Customer/${organizerId}/create-event`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(eventData)
+                body: JSON.stringify(eventData) // Now includes totalTickets
             });
 
             if (response.ok) {
@@ -78,25 +79,13 @@ const CreateEvent = () => {
                     <p style={{ color: "#94a3b8", marginTop: "10px" }}>Deploy new experiences to the community.</p>
                 </div>
                 
-                {/* Navigation Group (Mirrored from MyHostedEvents) */}
                 <div style={{ display: "flex", gap: "15px", alignItems: "center", paddingTop: "10px" }}>
-                    
-                    {/* --- My Events Button (Secondary on this page) --- */}
                     <button 
                         style={{ 
-                            width: "auto", 
-                            padding: "12px 24px", 
-                            border: "1px solid #334155",
-                            background: "transparent",
-                            color: "#94a3b8",
-                            cursor: "pointer",
-                            fontSize: "0.9rem",
-                            fontWeight: "600",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            borderRadius: "12px",
-                            transition: "all 0.2s"
+                            width: "auto", padding: "12px 24px", border: "1px solid #334155",
+                            background: "transparent", color: "#94a3b8", cursor: "pointer",
+                            fontSize: "0.9rem", fontWeight: "600", display: "flex",
+                            alignItems: "center", gap: "10px", borderRadius: "12px", transition: "all 0.2s"
                         }}
                         onClick={() => navigate("/customer/my-hosted-events")}
                         onMouseOver={(e) => {
@@ -108,26 +97,15 @@ const CreateEvent = () => {
                             e.currentTarget.style.borderColor = "#334155";
                         }}
                     >
-                        <span style={{ fontSize: "1.2rem" }}>🗂️</span>
-                        MY EVENTS
+                        <span style={{ fontSize: "1.2rem" }}>🗂️</span> MY EVENTS
                     </button>
 
-                    {/* --- Create Event Button (Active Highlight) --- */}
                     <button 
                         style={{ 
-                            width: "auto", 
-                            padding: "12px 24px",
-                            background: "#1e293b", 
-                            border: "1px solid #61dafb", 
-                            borderRadius: "12px", 
-                            color: "#ffffff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            fontSize: "0.9rem",
-                            fontWeight: "700",
-                            transition: "all 0.2s ease"
+                            width: "auto", padding: "12px 24px", background: "#1e293b", 
+                            border: "1px solid #61dafb", borderRadius: "12px", color: "#ffffff",
+                            cursor: "pointer", display: "flex", alignItems: "center", gap: "10px",
+                            fontSize: "0.9rem", fontWeight: "700", transition: "all 0.2s ease"
                         }}
                     >
                         <span style={{ color: "#ef4444", fontSize: "1.5rem", fontWeight: "900" }}>+</span>
@@ -138,7 +116,7 @@ const CreateEvent = () => {
                             VENDOR
                         </span>
                         <span style={{ display: "block", fontSize: "1rem", color: "#ffffff", fontWeight: "600" }}>
-                            {JSON.parse(localStorage.getItem('eventHubUser'))?.name || "Organizer"}
+                            {userSession?.name || "Organizer"}
                         </span>
                     </div>
                     <Logout />
@@ -181,6 +159,7 @@ const CreateEvent = () => {
                                     <option value="Music" style={{background: "#1e293b"}}>Music</option>
                                     <option value="Workshop" style={{background: "#1e293b"}}>Workshop</option>
                                     <option value="Tech" style={{background: "#1e293b"}}>Tech</option>
+                                    <option value="Performing Arts" style={{background: "#1e293b"}}>Performing Arts</option>
                                 </select>
                             </div>
 
@@ -191,7 +170,20 @@ const CreateEvent = () => {
                                 </div>
                                 <div className="form-group" style={{ flex: 1 }}>
                                     <label>Total Tickets</label>
-                                    <input type="number" value={eventData.availableTickets} required onChange={e => setEventData({...eventData, availableTickets: parseInt(e.target.value)})} />
+                                    {/* UPDATED: Sets both availableTickets and totalTickets simultaneously */}
+                                    <input 
+                                        type="number" 
+                                        value={eventData.availableTickets} 
+                                        required 
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value) || 0;
+                                            setEventData({
+                                                ...eventData, 
+                                                availableTickets: val, 
+                                                totalTickets: val 
+                                            });
+                                        }} 
+                                    />
                                 </div>
                             </div>
                         </div>
