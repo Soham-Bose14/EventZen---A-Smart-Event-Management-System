@@ -40,6 +40,15 @@ public class EventDetails {
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL)
     private VenueDetails venueDetails;
 
+    @Column(name = "status")
+    private String status;
+
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
+    }
     // Standard Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

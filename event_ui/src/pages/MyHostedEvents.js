@@ -51,7 +51,7 @@ const MyHostedEvents = () => {
                 <div style={{ flex: "1", minWidth: "300px" }}>
                     <h1 style={{ fontSize: "2.8rem", margin: 0, fontWeight: "800" }}>Organizer Portal</h1>
                     <p style={{ color: "#94a3b8", marginTop: "12px", fontSize: "1.1rem" }}>
-                        Managing {hostedEvents.length} active events.
+                        My Events' Status
                     </p>
                 </div>
 

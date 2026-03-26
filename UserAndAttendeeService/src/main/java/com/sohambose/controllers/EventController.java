@@ -29,7 +29,7 @@ public class EventController {
      */
     @GetMapping
     public List<EventDetails> getAllEvents() {
-        return eventRepo.findAll();
+        return eventRepo.findByStatus("Approved");
     }
 
     /**
@@ -39,7 +39,7 @@ public class EventController {
      */
     @GetMapping("/city")
     public ResponseEntity<List<EventDetails>> getEventsByCity(@RequestParam("name") String city) {
-        List<EventDetails> events = eventRepo.findByCity(city);
+        List<EventDetails> events = eventRepo.findApprovedByCity(city);
         return ResponseEntity.ok(events);
     }
 
@@ -50,7 +50,7 @@ public class EventController {
      */
     @GetMapping("/type")
     public ResponseEntity<List<EventDetails>> getEventsByEventType(@RequestParam("type") String type) {
-        List<EventDetails> events = eventRepo.findByEventType(type);
+        List<EventDetails> events = eventRepo.findByEventTypeAndStatus(type, "Approved");
         return ResponseEntity.ok(events);
     }
 

@@ -45,7 +45,7 @@ const CreateEvent = () => {
             });
 
             if (response.ok) {
-                toast.success("🚀 Event Published Successfully!", {
+                toast.success("🚀 Event Sent For Admin Approval!", {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "dark",
@@ -158,6 +158,7 @@ const CreateEvent = () => {
                                     <option value="Conference" style={{background: "#1e293b"}}>Conference</option>
                                     <option value="Music" style={{background: "#1e293b"}}>Music</option>
                                     <option value="Workshop" style={{background: "#1e293b"}}>Workshop</option>
+                                    <option value="Trade Fair" style={{background: "#1e293b"}}>Trade Fair</option>
                                     <option value="Tech" style={{background: "#1e293b"}}>Tech</option>
                                     <option value="Performing Arts" style={{background: "#1e293b"}}>Performing Arts</option>
                                 </select>

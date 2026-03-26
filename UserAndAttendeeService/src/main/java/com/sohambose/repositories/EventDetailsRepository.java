@@ -10,12 +10,12 @@ import java.util.List;
 @Repository
 public interface EventDetailsRepository extends JpaRepository<EventDetails, Integer> {
 
-    // 1. Direct filter on EventDetails table
-    // Spring generates: SELECT * FROM event_details WHERE EventType = ?
-    List<EventDetails> findByEventType(String eventType);
+    List<EventDetails> findByStatus(String status);
 
-    // 2. Filter via the Joined VenueDetails table
-    // We use a JPQL query to reach into the venueDetails object
-    @Query("SELECT e FROM EventDetails e JOIN e.venueDetails v WHERE v.city = :city")
-    List<EventDetails> findByCity(@Param("city") String city);
+    // Approved events by city
+    @Query("SELECT e FROM EventDetails e JOIN e.venueDetails v WHERE v.city = :city AND e.status = 'Approved'")
+    List<EventDetails> findApprovedByCity(@Param("city") String city);
+
+    // Approved events by type
+    List<EventDetails> findByEventTypeAndStatus(String eventType, String status);
 }

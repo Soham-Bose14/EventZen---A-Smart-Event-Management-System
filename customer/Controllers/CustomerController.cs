@@ -212,7 +212,7 @@ namespace customer.Controllers
             try
             {
                 var events = await _context.EventDetails
-                    .Where(e => e.OrganizerId == organizerId)
+                    .Where(e => e.OrganizerId == organizerId && e.Status == "Approved") // ✅ Added filter
                     .Include(e => e.Venue)
                     .OrderByDescending(e => e.DateTime)
                     .Select(e => new
