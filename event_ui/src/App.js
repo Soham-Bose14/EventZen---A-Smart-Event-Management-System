@@ -4,6 +4,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import Startup from './pages/Startup';
 import Dashboard from './pages/Dashboard';
 import AppliedEvents from './pages/AppliedEvents';
+import AdminApproval from "./pages/AdminApproval";
+
 
 import CreateEvent from './pages/CreateEvent';
 import './App.css';
@@ -34,6 +36,7 @@ function App() {
             <Route path="/admin/view-user-bookings/:userId" element={<AdminUserBookings />} />
             <Route path="/admin/view-host-events/:vendorId" element={<AdminVendorEvents />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/event-approvals" element={<AdminApproval />} />
           </Routes>
         </header>
       </div>

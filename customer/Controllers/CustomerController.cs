@@ -12,7 +12,8 @@ using System.Text;
 
 namespace customer.Controllers
 {
-    // --- Data Transfer Objects (DTOs) ---
+    // ---------------- DTOs ----------------
+
     public class LoginRequest
     {
         public string Email { get; set; } = string.Empty;
@@ -28,7 +29,6 @@ namespace customer.Controllers
         public decimal Price { get; set; }
         public string ImagePath { get; set; } = string.Empty;
         public int AvailableTickets { get; set; }
-
         public int TotalTickets { get; set; }
 
         public string City { get; set; } = string.Empty;
@@ -47,7 +47,8 @@ namespace customer.Controllers
             _context = context;
         }
 
-        // JWT TOKEN GENERATOR
+        // ---------------- JWT TOKEN GENERATOR ----------------
+
         private string GenerateJwtToken(string email)
         {
             var securityKey = new SymmetricSecurityKey(
@@ -67,7 +68,8 @@ namespace customer.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // 1. REGISTER CUSTOMER (ORGANIZER)
+        // ---------------- 1. REGISTER ORGANIZER ----------------
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] Organizer customer)
         {
@@ -110,7 +112,8 @@ namespace customer.Controllers
             }
         }
 
-        // 2. LOGIN CUSTOMER (ORGANIZER)
+        // ---------------- 2. LOGIN ORGANIZER ----------------
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -135,16 +138,18 @@ namespace customer.Controllers
             });
         }
 
-        // 3. CREATE EVENT
+        // ---------------- 3. CREATE EVENT (PENDING APPROVAL) ----------------
+
         [HttpPost("{organizerId}/create-event")]
         public async Task<IActionResult> CreateEvent(int organizerId, [FromBody] EventCreateDto dto)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
-            IActionResult finalResult = BadRequest(new { message = "An unexpected error occurred." });
+            IActionResult finalResult = BadRequest(new { message = "Unexpected error occurred" });
 
             await strategy.ExecuteAsync(async () =>
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
+
                 try
                 {
                     var newEvent = new EventDetails
@@ -157,7 +162,8 @@ namespace customer.Controllers
                         ImagePath = dto.ImagePath,
                         AvailableTickets = dto.AvailableTickets,
                         TotalTickets = dto.TotalTickets > 0 ? dto.TotalTickets : dto.AvailableTickets,
-                        OrganizerId = organizerId
+                        OrganizerId = organizerId,
+                        Status = "Pending" // NEW
                     };
 
                     _context.EventDetails.Add(newEvent);
@@ -178,13 +184,15 @@ namespace customer.Controllers
 
                     finalResult = Ok(new
                     {
-                        message = "Event and Venue created successfully!",
-                        eventId = newEvent.Id
+                        message = "Event submitted for admin approval",
+                        eventId = newEvent.Id,
+                        status = newEvent.Status
                     });
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
+
                     finalResult = BadRequest(new
                     {
                         message = "Failed to create event",
@@ -196,7 +204,8 @@ namespace customer.Controllers
             return finalResult;
         }
 
-        // 4. GET EVENTS BY CUSTOMER ID
+        // ---------------- 4. GET EVENTS BY ORGANIZER ----------------
+
         [HttpGet("{organizerId}/events")]
         public async Task<IActionResult> GetEventsByCustomerId(int organizerId)
         {
@@ -217,6 +226,7 @@ namespace customer.Controllers
                         e.ImagePath,
                         e.AvailableTickets,
                         e.TotalTickets,
+                        e.Status,
                         TicketsSold = e.TotalTickets - e.AvailableTickets,
                         Revenue = (e.TotalTickets - e.AvailableTickets) * e.Price,
                         Venue = e.Venue != null ? new
@@ -240,7 +250,8 @@ namespace customer.Controllers
             }
         }
 
-        // 5. GET ALL CUSTOMERS
+        // ---------------- 5. GET ALL ORGANIZERS ----------------
+
         [HttpGet("all")]
         public async Task<IActionResult> GetAllCustomers()
         {
@@ -266,6 +277,53 @@ namespace customer.Controllers
                     error = ex.Message
                 });
             }
+        }
+
+        // ---------------- ADMIN: GET PENDING EVENTS ----------------
+
+        [HttpGet("admin/pending-events")]
+        public async Task<IActionResult> GetPendingEvents()
+        {
+            var events = await _context.EventDetails
+                .Where(e => e.Status == "Pending")
+                .Include(e => e.Venue)
+                .ToListAsync();
+
+            return Ok(events);
+        }
+
+        // ---------------- ADMIN: APPROVE EVENT ----------------
+
+        [HttpPut("admin/approve/{eventId}")]
+        public async Task<IActionResult> ApproveEvent(int eventId)
+        {
+            var ev = await _context.EventDetails.FindAsync(eventId);
+
+            if (ev == null)
+                return NotFound();
+
+            ev.Status = "Approved";
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Event approved successfully" });
+        }
+
+        // ---------------- ADMIN: REJECT EVENT ----------------
+
+        [HttpPut("admin/reject/{eventId}")]
+        public async Task<IActionResult> RejectEvent(int eventId)
+        {
+            var ev = await _context.EventDetails.FindAsync(eventId);
+
+            if (ev == null)
+                return NotFound();
+
+            ev.Status = "Rejected";
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Event rejected" });
         }
     }
 }

@@ -116,6 +116,27 @@ const MyHostedEvents = () => {
                                 <span className="status-badge" style={{ background: "#61dafb", position: "absolute", top: "10px", right: "10px", padding: "5px 10px", borderRadius: "5px", color: "#0f172a", fontSize: "0.7rem", fontWeight: "bold" }}>
                                     {event.eventType}
                                 </span>
+                                {/* NEW STATUS BADGE */}
+                                <span
+                                    style={{
+                                        position: "absolute",
+                                        top: "10px",
+                                        left: "10px",
+                                        padding: "5px 10px",
+                                        borderRadius: "5px",
+                                        fontSize: "0.7rem",
+                                        fontWeight: "bold",
+                                        color: "white",
+                                        background:
+                                            event.status === "Approved"
+                                                ? "#22c55e"
+                                                : event.status === "Rejected"
+                                                ? "#ef4444"
+                                                : "#f59e0b"
+                                    }}
+                                >
+                                    {event.status}
+                                </span>
                             </div>
 
                             <div className="event-details" style={{ padding: "20px" }}>

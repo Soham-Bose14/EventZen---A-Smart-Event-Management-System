@@ -15,26 +15,25 @@ namespace customer.Models
 
         public string Description { get; set; } = string.Empty;
 
-        public string EventType { get; set; } = string.Empty; 
+        public string EventType { get; set; } = string.Empty;
 
         [Required]
         public DateTime DateTime { get; set; }
 
-        [Column(TypeName = "decimal(18, 2)")] 
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
-        public string ImagePath { get; set; } = string.Empty; 
+        public string ImagePath { get; set; } = string.Empty;
 
-        // Current tickets left for booking
         public int AvailableTickets { get; set; }
 
-        // --- NEW PROPERTY ---
-        // The total capacity/initial tickets of the event
         [Column("TotalTickets")]
         public int TotalTickets { get; set; }
 
-        // --- Relationships ---
+        // NEW → Approval workflow
+        public string Status { get; set; } = "Pending";
 
+        // Relationships
         [Required]
         public int OrganizerId { get; set; }
 

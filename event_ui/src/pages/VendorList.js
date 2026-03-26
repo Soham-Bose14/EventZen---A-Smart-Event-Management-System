@@ -60,6 +60,20 @@ const VendorList = () => {
                         <span style={{ background: "linear-gradient(45deg, #22c55e, #eab308, #ef4444)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>⏲️</span>
                         LIVE EVENTS
                     </button>
+                    <button
+                        style={{
+                            padding: "12px 24px",
+                            background: "#1e293b",
+                            border: "1px solid #22c55e",
+                            borderRadius: "12px",
+                            color: "#ffffff",
+                            cursor: "pointer",
+                            fontWeight: "700"
+                        }}
+                        onClick={() => navigate("/admin/event-approvals")}
+                    >
+                        ✅ EVENT APPROVALS
+                    </button>
                     <div style={{ textAlign: "right" }}>
                         {/* <span style={{ display: "block", fontSize: "0.75rem", color: "#eab308", fontWeight: "bold", letterSpacing: "1px" }}>
                             ROLE
