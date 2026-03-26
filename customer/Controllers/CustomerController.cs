@@ -6,17 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using customer.Data;
 using customer.Models;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 
 namespace customer.Controllers
 {
     // --- Data Transfer Objects (DTOs) ---
-    public class LoginRequest 
-    { 
-        public string Email { get; set; } = string.Empty; 
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
 
-    public class EventCreateDto 
+    public class EventCreateDto
     {
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -25,11 +28,9 @@ namespace customer.Controllers
         public decimal Price { get; set; }
         public string ImagePath { get; set; } = string.Empty;
         public int AvailableTickets { get; set; }
-        
-        // Added to capture the total capacity upon creation
-        public int TotalTickets { get; set; } 
-        
-        // Venue specific fields
+
+        public int TotalTickets { get; set; }
+
         public string City { get; set; } = string.Empty;
         public string VenueName { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
@@ -46,6 +47,26 @@ namespace customer.Controllers
             _context = context;
         }
 
+        // JWT TOKEN GENERATOR
+        private string GenerateJwtToken(string email)
+        {
+            var securityKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("EventZenSuperSecretKeyEventZenSuperSecretKey")
+            );
+
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: "EventZen",
+                audience: null,
+                claims: null,
+                expires: DateTime.Now.AddHours(24),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
         // 1. REGISTER CUSTOMER (ORGANIZER)
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] Organizer customer)
@@ -54,7 +75,11 @@ namespace customer.Controllers
             {
                 if (await _context.Organizers.AnyAsync(o => o.Email == customer.Email))
                 {
-                    return BadRequest(new { message = "Registration failed", error = "Email already registered." });
+                    return BadRequest(new
+                    {
+                        message = "Registration failed",
+                        error = "Email already registered."
+                    });
                 }
 
                 var newOrganizer = new Organizer
@@ -67,16 +92,21 @@ namespace customer.Controllers
 
                 _context.Organizers.Add(newOrganizer);
                 await _context.SaveChangesAsync();
-                
-                return Ok(new { 
-                    id = newOrganizer.Id, 
-                    name = newOrganizer.Name, 
-                    email = newOrganizer.Email 
+
+                return Ok(new
+                {
+                    id = newOrganizer.Id,
+                    name = newOrganizer.Name,
+                    email = newOrganizer.Email
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Registration failed", error = ex.Message });
+                return BadRequest(new
+                {
+                    message = "Registration failed",
+                    error = ex.Message
+                });
             }
         }
 
@@ -87,10 +117,22 @@ namespace customer.Controllers
             var customer = await _context.Organizers
                 .FirstOrDefaultAsync(o => o.Email == request.Email && o.Password == request.Password);
 
-            if (customer == null) 
+            if (customer == null)
                 return Unauthorized(new { message = "Invalid email or password" });
 
-            return Ok(customer);
+            var token = GenerateJwtToken(customer.Email);
+
+            return Ok(new
+            {
+                token = token,
+                user = new
+                {
+                    customer.Id,
+                    customer.Name,
+                    customer.Email,
+                    customer.CompanyName
+                }
+            });
         }
 
         // 3. CREATE EVENT
@@ -114,18 +156,17 @@ namespace customer.Controllers
                         Price = dto.Price,
                         ImagePath = dto.ImagePath,
                         AvailableTickets = dto.AvailableTickets,
-                        // NEW Logic: Ensure TotalTickets matches AvailableTickets at launch if not specified
                         TotalTickets = dto.TotalTickets > 0 ? dto.TotalTickets : dto.AvailableTickets,
                         OrganizerId = organizerId
                     };
 
                     _context.EventDetails.Add(newEvent);
-                    await _context.SaveChangesAsync(); 
+                    await _context.SaveChangesAsync();
 
                     var venue = new VenueDetails
                     {
                         City = dto.City,
-                        Venue = dto.VenueName, 
+                        Venue = dto.VenueName,
                         Address = dto.Address,
                         EventId = newEvent.Id
                     };
@@ -135,22 +176,27 @@ namespace customer.Controllers
 
                     await transaction.CommitAsync();
 
-                    finalResult = Ok(new { 
-                        message = "Event and Venue created successfully!", 
-                        eventId = newEvent.Id 
+                    finalResult = Ok(new
+                    {
+                        message = "Event and Venue created successfully!",
+                        eventId = newEvent.Id
                     });
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    finalResult = BadRequest(new { message = "Failed to create event", error = ex.Message });
+                    finalResult = BadRequest(new
+                    {
+                        message = "Failed to create event",
+                        error = ex.Message
+                    });
                 }
             });
 
             return finalResult;
         }
 
-        // 4. GET EVENTS BY CUSTOMER ID (Includes Real-Time Analytics)
+        // 4. GET EVENTS BY CUSTOMER ID
         [HttpGet("{organizerId}/events")]
         public async Task<IActionResult> GetEventsByCustomerId(int organizerId)
         {
@@ -158,9 +204,10 @@ namespace customer.Controllers
             {
                 var events = await _context.EventDetails
                     .Where(e => e.OrganizerId == organizerId)
-                    .Include(e => e.Venue) 
+                    .Include(e => e.Venue)
                     .OrderByDescending(e => e.DateTime)
-                    .Select(e => new {
+                    .Select(e => new
+                    {
                         e.Id,
                         e.Title,
                         e.Description,
@@ -170,10 +217,10 @@ namespace customer.Controllers
                         e.ImagePath,
                         e.AvailableTickets,
                         e.TotalTickets,
-                        // Calculation Logic for Vendor Dashboard
                         TicketsSold = e.TotalTickets - e.AvailableTickets,
                         Revenue = (e.TotalTickets - e.AvailableTickets) * e.Price,
-                        Venue = e.Venue != null ? new {
+                        Venue = e.Venue != null ? new
+                        {
                             e.Venue.Venue,
                             e.Venue.City,
                             e.Venue.Address
@@ -185,18 +232,23 @@ namespace customer.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Failed to retrieve events", error = ex.Message });
+                return BadRequest(new
+                {
+                    message = "Failed to retrieve events",
+                    error = ex.Message
+                });
             }
         }
 
-        // 5. GET ALL CUSTOMERS (ORGANIZERS)
+        // 5. GET ALL CUSTOMERS
         [HttpGet("all")]
         public async Task<IActionResult> GetAllCustomers()
         {
             try
             {
                 var customers = await _context.Organizers
-                    .Select(o => new {
+                    .Select(o => new
+                    {
                         o.Id,
                         o.Name,
                         o.Email,
@@ -208,7 +260,11 @@ namespace customer.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Failed to retrieve customers", error = ex.Message });
+                return BadRequest(new
+                {
+                    message = "Failed to retrieve customers",
+                    error = ex.Message
+                });
             }
         }
     }

@@ -143,7 +143,7 @@ const CreateEvent = () => {
                             <div className="form-group">
                                 <label>Description</label>
                                 <textarea 
-                                    style={{ height: "220px", width: "100%", boxSizing: "border-box", resize: "vertical" }} 
+                                    style={{ height: "220px", width: "100%", boxSizing: "border-box", resize: "vertical", overflowY: "auto" }} 
                                     placeholder="Write a detailed description..." 
                                     value={eventData.description}
                                     required 
@@ -214,7 +214,7 @@ const CreateEvent = () => {
                             <div className="form-group">
                                 <label>Full Address</label>
                                 <textarea 
-                                    style={{ height: "150px", width: "100%", boxSizing: "border-box", resize: "vertical" }} 
+                                    style={{ height: "150px", width: "100%", boxSizing: "border-box", resize: "vertical", overflowY: "auto" }} 
                                     placeholder="Complete Address..." 
                                     value={eventData.address}
                                     required 

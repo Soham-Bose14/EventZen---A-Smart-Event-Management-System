@@ -26,6 +26,8 @@ const Startup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+
+        // --- ADMIN LOGIN (leave unchanged) ---
         if(accountType == 'Admin'){
             if(password !== "Admin@123" || email !== "admin@gmail.com"){
                 toast.error("Invalid Credentials!", { theme: "dark" });
@@ -41,67 +43,91 @@ const Startup = () => {
         }
 
         let url = "";
+
         if (accountType === 'User') {
-            url = activeAction === 'Login' 
-                ? "http://localhost:8080/users/login" 
+            url = activeAction === 'Login'
+                ? "http://localhost:8080/users/login"
                 : "http://localhost:8080/users/register";
-        } else if (accountType === 'Vendor') {
-            url = activeAction === 'Login' 
-                ? "http://localhost:5062/api/Customer/login" 
+        }
+        else if (accountType === 'Vendor') {
+            url = activeAction === 'Login'
+                ? "http://localhost:5062/api/Customer/login"
                 : "http://localhost:5062/api/Customer/register";
         }
 
+        // --- Payload ---
         const payload = {
-            email,
-            password,
+            email: email.trim(),
+            password: password.trim(),
             ...(activeAction === 'Sign Up' && { name }),
-            ...(activeAction === 'Sign Up' && accountType === 'User' && { 
-                contact_number: contact ? Number(contact) : 0 
+            ...(activeAction === 'Sign Up' && accountType === 'User' && {
+                contact_number: contact ? Number(contact) : 0
             }),
             ...(activeAction === 'Sign Up' && accountType === 'Vendor' && { companyName })
         };
 
         try {
             const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(payload)
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(data.message || "Authentication failed", { theme: "dark" });
+                return;
+            }
+
+            // --- LOGIN SUCCESS ---
+            if (activeAction === "Login") {
+
                 const userSession = {
-                    ...data,
+                    ...data.user,
+                    token: data.token,
                     role: accountType,
                     isLoggedIn: true,
                     loginTime: new Date().toLocaleString()
                 };
-                
-                localStorage.setItem('eventHubUser', JSON.stringify(userSession));
-                
-                toast.success(`${activeAction} successful! Welcome, ${data.name || accountType}`, {
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("eventHubUser", JSON.stringify(userSession));
+
+                toast.success(`Login successful! Welcome, ${data.user?.name}`, {
                     position: "top-right",
                     autoClose: 3000,
-                    theme: "dark",
+                    theme: "dark"
                 });
+
                 if(accountType === "User"){
-                    navigate("/dashboard")
+                    navigate("/dashboard");
                 }
-                else if(accountType === "Admin"){
-                    navigate("/admin/user-list")
+                else if(accountType === "Vendor"){
+                    navigate("/customer/my-hosted-events");
                 }
-                else{
-                    navigate("/customer/my-hosted-events")
-                }
-            } else {
-                const errorMsg = await response.text();
-                toast.error(`Auth Failed: ${errorMsg}`, { theme: "dark" });
+
             }
+            // --- SIGNUP SUCCESS ---
+            else {
+
+                toast.success("Account created successfully! Please login.", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    theme: "dark"
+                });
+
+                setActiveAction("Login");
+            }
+
         } catch (error) {
             console.error("Connection Error:", error);
-            toast.error("Invalid Credentials! Try again.", { theme: "colored" });
+            toast.error("Server connection failed!", { theme: "colored" });
         }
     };
+
 
     return (
         <div className="App-header">

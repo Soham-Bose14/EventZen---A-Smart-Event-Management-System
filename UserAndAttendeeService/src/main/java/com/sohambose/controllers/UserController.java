@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.sohambose.models.AuthResponse;
 import com.sohambose.models.LoginRequest;
 import com.sohambose.models.User;
+import com.sohambose.security.JwtUtil;
 import com.sohambose.services.UserService;
 
 @RestController
@@ -18,6 +20,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     // Register user
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User user){
@@ -26,9 +31,10 @@ public class UserController {
 
     // Login user
     @PostMapping("/login")
-    public ResponseEntity<User> loginUser(@RequestBody LoginRequest loginRequest) {
-        // We extract only what we need from the DTO
-        return ResponseEntity.ok(userService.loginUser(loginRequest.getEmail(), loginRequest.getPassword()));
+    public ResponseEntity<AuthResponse> loginUser(@RequestBody LoginRequest loginRequest) {
+        User user = userService.loginUser(loginRequest.getEmail(), loginRequest.getPassword());
+        String token = jwtUtil.generateToken(user.getEmail());
+        return ResponseEntity.ok(new AuthResponse(token, user));
     }
 
     // Get all users
